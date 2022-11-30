@@ -112,7 +112,7 @@ void startPlugin() {
     sceUsbstorVStorStop();
     saveSystemClocks();
     applyUnderClock();
-	vitaPadStart(SETTINGS.XINPUT_MAPPING);
+	vitaPadStart(SETTINGS.BUTTON_MAPPING, SETTINGS.BUTTON_ORDER);
 	activate();
     setCurrentScreen(1);
 }

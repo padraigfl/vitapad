@@ -9,7 +9,14 @@
 #include "utils.h"
 #include "main.h"
 
-char *MENU_ITEMS[5] = {"START", "ACTIVE DISPLAY", "XINPUT MAPPING", "TOUCHPAD CONTROLS", "RESET TOUCHPAD CONTROLS"};
+#define MENU_START "START"
+#define MENU_ACTIVE_DISPLAY "ACTIVE DISPLAY"
+#define MENU_BUTTON_MAPPING "BUTTON MAPPING"
+#define MENU_BUTTON_ORDER "BUTTON ORDER"
+#define MENU_TOUCHPAD_CONTROLS "TOUCHPAD CONTROLS"
+#define MENU_RESET_TOUCHPAD_CONTROLS "RESET TOUCHPAD CONTROLS"
+
+char *MENU_ITEMS[6] = {MENU_START, MENU_ACTIVE_DISPLAY, MENU_BUTTON_MAPPING, MENU_BUTTON_ORDER, MENU_TOUCHPAD_CONTROLS, MENU_RESET_TOUCHPAD_CONTROLS};
 int CURRENT_MENU_ITEM = 0;
 
 int menuItemSelected(char *id) {
@@ -30,21 +37,25 @@ void setCurrentMenuItem(int index) {
 void handleMenuActions() {
     if (modalActive()) return;
     if (pressed_pad[PAD_CROSS]) {
-        if (menuItemSelected("START")) {
+        if (menuItemSelected(MENU_START)) {
             startPlugin();
         }
-        if (menuItemSelected("XINPUT MAPPING")) {
+        if (menuItemSelected(MENU_BUTTON_MAPPING)) {
             toggleAltLayout();
             saveSettings();
         }
-        if (menuItemSelected("ACTIVE DISPLAY")) {
+        if (menuItemSelected(MENU_BUTTON_ORDER)) {
+            toggleAB();
+            saveSettings();
+        }
+        if (menuItemSelected(MENU_ACTIVE_DISPLAY)) {
             toggleActiveDisplay();
             saveSettings();
         }
-        if (menuItemSelected("TOUCHPAD CONTROLS")) {
+        if (menuItemSelected(MENU_TOUCHPAD_CONTROLS)) {
             setCurrentScreen(2);
         }
-        if (menuItemSelected("RESET TOUCHPAD CONTROLS")) {
+        if (menuItemSelected(MENU_RESET_TOUCHPAD_CONTROLS)) {
             openTouchPadControlResetToDefaultSettingsModal();
         }
     } else if (pressed_pad[PAD_UP]) {
@@ -53,7 +64,7 @@ void handleMenuActions() {
         }
     } else if (pressed_pad[PAD_DOWN]) {
         if (CURRENT_MENU_ITEM < ((sizeof(MENU_ITEMS) / sizeof(MENU_ITEMS[0]) - 1))) {
-            if (!checkTouchPadControlsChanged(DEFAULT_TOUCHPAD_CONTROL_SETTINGS, TOUCHPAD_CONTROL_SETTINGS) && CURRENT_MENU_ITEM == 2) {
+            if (!checkTouchPadControlsChanged(DEFAULT_TOUCHPAD_CONTROL_SETTINGS, TOUCHPAD_CONTROL_SETTINGS) && CURRENT_MENU_ITEM == 4) {
                 return;
             }
             CURRENT_MENU_ITEM += 1;
@@ -61,14 +72,24 @@ void handleMenuActions() {
     }
 }
 
+char* getControlText(int val) {
+    if (val == 0)
+        return "Original";
+    if (val == 1)
+        return "Web suggest";
+    return "Xinput";
+}
+
 void displayMenu(int top) {
     for (int i = 0; i < (sizeof(MENU_ITEMS) / sizeof(MENU_ITEMS[0])); ++i) {
         char text[MAX_MENU_ITEM_TITLE_LENGTH];
 
-        if (strcmp(MENU_ITEMS[i], "ACTIVE DISPLAY") == 0) {
+        if (strcmp(MENU_ITEMS[i], MENU_ACTIVE_DISPLAY) == 0) {
             sprintf(text, "%s %s", MENU_ITEMS[i], SETTINGS.ACTIVE_DISPLAY ? "ON" : "OFF");
-        } else if (strcmp(MENU_ITEMS[i], "XINPUT MAPPING") == 0) {
-            sprintf(text, "%s %s", MENU_ITEMS[i], SETTINGS.XINPUT_MAPPING ? "ON" : "OFF");
+        } else if (strcmp(MENU_ITEMS[i], MENU_BUTTON_MAPPING) == 0) { 
+            sprintf(text, "%s %s", MENU_ITEMS[i], SETTINGS.BUTTON_MAPPING == 0 ? "default" : SETTINGS.BUTTON_MAPPING == 1 ? "web" : "xinput");
+        } else if (strcmp(MENU_ITEMS[i], MENU_BUTTON_ORDER) == 0) { 
+            sprintf(text, "%s %s", MENU_ITEMS[i], SETTINGS.BUTTON_ORDER ? "Xbox (O=B, X=A)" : "Nintendo (O=A, X=B)");
         } else {
             strcpy(text, MENU_ITEMS[i]);
         }

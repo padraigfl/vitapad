@@ -7,7 +7,8 @@
 #define MAX_CONFIG_LINE_LENGTH 1024
 
 #define DEFAULT_ACTIVE_DISPLAY 1
-#define DEFAULT_XINPUT_MAPPING 1
+#define DEFAULT_BUTTON_MAPPING 2
+#define DEFAULT_BUTTON_ORDER 1
 #define DEFAULT_L2_REAR_TOUCHPAD 1
 #define DEFAULT_L3_REAR_TOUCHPAD 1
 #define DEFAULT_R2_REAR_TOUCHPAD 1
@@ -43,7 +44,8 @@ typedef struct {
 
 struct VitaPadSettings {
     int ACTIVE_DISPLAY;
-    int XINPUT_MAPPING;
+    int BUTTON_MAPPING;
+    int BUTTON_ORDER;
 };
 
 struct VitaPadTouchPadControlSettings {
@@ -79,6 +81,7 @@ extern int CLEAN_TOUCHPAD_CONTROL_SETTINGS_UPDATED;
 
 extern void toggleActiveDisplay();
 extern void toggleAltLayout();
+extern void toggleAB();
 
 static SettingEntry SettingEntries[2];
 static SettingEntry TouchPadControlSettingEntries[20];

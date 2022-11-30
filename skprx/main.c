@@ -43,6 +43,8 @@ static int L3_PRESSED;
 static int R3_PRESSED;
 
 static int LAYOUT_OPTION = 0;
+// swaps between ABXY layout of xbox and nintendo
+static int BUTTON_ORDER = 0;
 
 int kuCtrlReadBufferPositive(SceCtrlData *pad_data, int count)
 {
@@ -134,53 +136,140 @@ static void handleHidReportComplete(SceUdcdDeviceRequest *req)
 	ksceKernelSetEventFlag(USB_EVENT_FLAG_ID, EVF_INT_REQ_COMPLETED);
 }
 
+struct ButtonLayout {
+	uint8_t circle;
+	uint8_t cross;
+	uint8_t triagle;
+	uint8_t square;
+	uint8_t l1;
+	uint8_t r1;
+	uint8_t select;
+	uint8_t start;
+	uint8_t l3;
+	uint8_t r3;
+	uint8_t up;
+	uint8_t down;
+	int left;
+	uint8_t right;
+	uint8_t l2;
+	uint8_t r2;
+};
+
+struct ButtonLayout originalLayout = {
+	.circle = 2,
+	.cross = 1,
+	.triagle = 3,
+	.square =0,
+	.l1 = 4,
+	.r1 = 5,
+	.select = 8,
+	.start = 9,
+	.l3 = 10,
+	.r3 = 11,
+	.up = 12,
+	.down = 13,
+	.left = 15,
+	.right = 14,
+	.l2 = 6,
+	.r2 = 7
+};
+
+struct ButtonLayout webSuggestedLayout = {
+	.circle = 1,
+	.cross = 0,
+	.triagle = 3,
+	.square = 2,
+	.l1 = 4,
+	.r1 = 5,
+	.select = 8,
+	.start = 9,
+	.l3 = 10,
+	.r3 = 11,
+	.up = 12,
+	.down = 13,
+	.left = 14,
+	.right = 15,
+	.l2 = 6,
+	.r2 = 7
+};
+
+struct ButtonLayout xInputLayout = {
+	.circle = 0,
+	.cross = 1,
+	.triagle = 2,
+	.square = 3,
+	.l1 = 4,
+	.r1 = 5,
+	.l3 = 8,
+	.r3 = 9,
+	.select = 6,
+	.start = 7,
+	.up = 10,
+	.down = 11,
+	.left = 14,
+	.right = 15,
+	// NOTE: l2 and r2 are actually z-axis on xInput
+	.l2 = 14,
+	.r2 = 15
+};
+
 static void fillGamepadReport(const SceCtrlData *pad, struct GamepadReport *gamepad)
 {
+	struct ButtonLayout usedLayout = LAYOUT_OPTION == 0 ? originalLayout : LAYOUT_OPTION == 1 ? webSuggestedLayout : xInputLayout;
 	gamepad->report_id = 1;
 	gamepad->buttons = 0;
 
 	if (pad->buttons & SCE_CTRL_SQUARE)
-		gamepad->buttons |= 1 << (LAYOUT_OPTION ? 2 : 0);
+		gamepad->buttons |= 1 << (BUTTON_ORDER ? usedLayout.square : usedLayout.triagle) ;
 	if (pad->buttons & SCE_CTRL_CROSS)
-		gamepad->buttons |= 1 << (LAYOUT_OPTION ? 0 : 1);
+		gamepad->buttons |= 1 << (BUTTON_ORDER ? usedLayout.cross : usedLayout.circle);
 	if (pad->buttons & SCE_CTRL_CIRCLE)
-		gamepad->buttons |= 1 << (LAYOUT_OPTION ? 1 : 2);
+		gamepad->buttons |= 1 << (BUTTON_ORDER ? usedLayout.circle : usedLayout.cross);
 	if (pad->buttons & SCE_CTRL_TRIANGLE)
-		gamepad->buttons |= 1 << 3;
+		gamepad->buttons |= 1 << (BUTTON_ORDER ? usedLayout.triagle : usedLayout.square);
 
 	if (pad->buttons & SCE_CTRL_LTRIGGER)
-		gamepad->buttons |= 1 << 4;
+		gamepad->buttons |= 1 << usedLayout.l1;
 	if (pad->buttons & SCE_CTRL_RTRIGGER)
-		gamepad->buttons |= 1 << 5;
+		gamepad->buttons |= 1 << usedLayout.r1;
 
 	if (L2_PRESSED == 1)
-		gamepad->buttons |= 1 << 6;
+		gamepad->buttons |= 1 << usedLayout.l2;
 	if (R2_PRESSED == 1)
-		gamepad->buttons |= 1 << 7;
+		gamepad->buttons |= 1 << usedLayout.r2;
 
 	if (pad->buttons & SCE_CTRL_SELECT)
-		gamepad->buttons |= 1 << 8;
+		gamepad->buttons |= 1 << usedLayout.select;
 	if (pad->buttons & SCE_CTRL_START)
-		gamepad->buttons |= 1 << 9;
+		gamepad->buttons |= 1 << usedLayout.start;
 
 	if (L3_PRESSED == 1)
-		gamepad->buttons |= 1 << 10;
+		gamepad->buttons |= 1 << usedLayout.l3;
 	if (R3_PRESSED == 1)
-		gamepad->buttons |= 1 << 11;
+		gamepad->buttons |= 1 << usedLayout.r3;
 
 	if (pad->buttons & SCE_CTRL_UP)
-		gamepad->buttons |= 1 << 12;
+		gamepad->buttons |= 1 << usedLayout.up;
 	if (pad->buttons & SCE_CTRL_DOWN)
-		gamepad->buttons |= 1 << 13;
+		gamepad->buttons |= 1 << usedLayout.down;
 	if (pad->buttons & SCE_CTRL_RIGHT)
-		gamepad->buttons |= 1 << (LAYOUT_OPTION ? 15 : 14);
+		gamepad->buttons |= 1 << usedLayout.right;
 	if (pad->buttons & SCE_CTRL_LEFT)
-		gamepad->buttons |= 1 << (LAYOUT_OPTION ? 14 : 15);
+		gamepad->buttons |= 1 << usedLayout.left;
 
 	gamepad->left_x = (int8_t)pad->lx - 128;
 	gamepad->left_y = (int8_t)pad->ly - 128;
 	gamepad->right_x = (int8_t)pad->rx - 128;
 	gamepad->right_y = (int8_t)pad->ry - 128;
+
+	// if (LAYOUT_OPTION == 2) {
+	// 	if (L2_PRESSED == 1)
+	// 		gamepad->lt = 128;
+	// 		// gamepad->l2 = (int8_t)pad->l2 - 128;
+	// 	if (R2_PRESSED == 1)
+	// 		gamepad->rt = 128;
+	// 		// gamepad->r2 = (int8_t)pad->r2 - 128;
+	// }
 }
 
 static int sendHidReport()
@@ -429,9 +518,10 @@ void vitaPadPreventSleep() {
     ksceKernelPowerTick(SCE_KERNEL_POWER_TICK_DEFAULT);
 }
 
-void vitaPadStart(int altLayout)
+void vitaPadStart(int altLayout, int abSwap)
 {
 		LAYOUT_OPTION = altLayout;
+		BUTTON_ORDER = abSwap;
     log_reset();
 
     SHOULD_EXIT_THREAD = 0;
