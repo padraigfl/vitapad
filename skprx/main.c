@@ -206,8 +206,9 @@ struct ButtonLayout xInputLayout = {
 	.start = 7,
 	.up = 10,
 	.down = 11,
-	.left = 14,
-	.right = 15,
+	// Not sure these are right
+	.left = 12,
+	.right = 13,
 	// NOTE: l2 and r2 are actually z-axis on xInput
 	.l2 = 14,
 	.r2 = 15
